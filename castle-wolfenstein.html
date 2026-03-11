@@ -386,7 +386,7 @@ function addAlert(msg, x, y, t=2.5, color='#ffff00') {
 
 function resetGame() {
   P = {
-    x: 2.5, y: 2.5,
+    x: 1.5, y: 3.5,
     dx: 1, dy: 0,
     px: 0, py: 0.66,
     hp: 100, ammo: 30, score: 0,
@@ -869,7 +869,7 @@ function doShoot() {
     if (dist>14) return;
     // Is it in the crosshair cone?
     const dot=(dx/dist)*P.dx+(dy/dist)*P.dy;
-    if (dot<0.93) return;
+    if (dot<0.85) return;
     if (!los(P.x,P.y,e.x,e.y)) return;
     if (dist<bestDist) { bestDist=dist; hitEnemy=e; }
   });
@@ -977,21 +977,20 @@ function updatePlayer(dt) {
 
   if (K['w']||K['arrowup'])    { nx+=P.dx*ms; ny+=P.dy*ms; moving=true; }
   if (K['s']||K['arrowdown'])  { nx-=P.dx*ms; ny-=P.dy*ms; moving=true; }
-  if (K['a'])                  { nx+=P.dy*ms*.8; ny-=P.dx*ms*.8; }
-  if (K['d'])                  { nx-=P.dy*ms*.8; ny+=P.dx*ms*.8; }
-  if (K['arrowleft'])  rotate(rs);
-  if (K['arrowright']) rotate(-rs);
+  if (K['a'])                  { nx+=P.dy*ms*.8; ny-=P.dx*ms*.8; moving=true; }
+  if (K['d'])                  { nx-=P.dy*ms*.8; ny+=P.dx*ms*.8; moving=true; }
+  if (K['arrowleft'])  rotate(-rs);
+  if (K['arrowright']) rotate(rs);
 
   // Mouse rotation
   if (mouseDX !== 0) { rotate(-mouseDX*0.0028); mouseDX=0; }
 
-  // Collision
-  const mx=nx, my=ny;
-  if (!isOpen(mx+Math.sign(P.dx-P.dy)*margin, P.y) || !isOpen(mx-Math.sign(P.dx+P.dy)*margin, P.y)) nx=P.x;
-  if (!isOpen(P.x, my+Math.sign(P.dy+P.dx)*margin) || !isOpen(P.x, my-Math.sign(P.dy-P.dx)*margin)) ny=P.y;
-  if (isOpen(nx,ny)) { P.x=nx; P.y=ny; }
-  else if (isOpen(nx,P.y)) P.x=nx;
-  else if (isOpen(P.x,ny)) P.y=ny;
+  // Collision: test each axis independently with a simple radius
+  const r = 0.25;
+  if (isOpen(nx + r, P.y) && isOpen(nx - r, P.y) &&
+      isOpen(nx, P.y + r) && isOpen(nx, P.y - r)) P.x = nx;
+  if (isOpen(P.x + r, ny) && isOpen(P.x - r, ny) &&
+      isOpen(P.x, ny + r) && isOpen(P.x, ny - r)) P.y = ny;
 
   // Gun bob
   if (moving) {
